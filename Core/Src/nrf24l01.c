@@ -12,7 +12,7 @@
 #define HIGH 1
 #define LOW  0
 
-extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi2;
 
 bool p_variant; /** False for RF24L01 and true for RF24L01P */
 uint8_t payload_size = 0; /**< Fixed size of payloads */
@@ -37,13 +37,13 @@ void delay_us(uint32_t us) // DelayMicro
 
 void csn(uint8_t level)
 {
-	HAL_GPIO_WritePin(GPIOC, CSN_Pin, level);
-	//delay_us(5);
+	HAL_GPIO_WritePin(CSN_GPIO_Port, CSN_Pin, level);
+	HAL_Delay(10);
 }
 
 void ce(uint8_t level)
 {
-	HAL_GPIO_WritePin(GPIOC, CE_Pin, level);
+	HAL_GPIO_WritePin(CE_GPIO_Port, CE_Pin, level);
 }
 
 uint8_t read_register(uint8_t reg)
@@ -52,8 +52,8 @@ uint8_t read_register(uint8_t reg)
 	uint8_t dt = 0;
 
 	csn(LOW);
-	HAL_SPI_TransmitReceive(&hspi1, &addr, &dt, 1, 1000);
-	HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xff, &dt, 1, 1000);
+	HAL_SPI_TransmitReceive(&hspi2, &addr, &dt, 1, 1000);
+	HAL_SPI_TransmitReceive(&hspi2, (uint8_t*)0xff, &dt, 1, 1000);
 	csn(HIGH);
 	return dt;
 }
@@ -64,8 +64,8 @@ uint8_t write_registerMy(uint8_t reg, const uint8_t* buf, uint8_t len)
 	uint8_t addr = W_REGISTER | (REGISTER_MASK & reg);
 
 	csn(LOW);
-	HAL_SPI_TransmitReceive(&hspi1, &addr, &status, 1, 100);
-	HAL_SPI_Transmit(&hspi1, (uint8_t*)buf, len, 100);
+	HAL_SPI_TransmitReceive(&hspi2, &addr, &status, 1, 100);
+	HAL_SPI_Transmit(&hspi2, (uint8_t*)buf, len, 100);
 	csn(HIGH);
 	return status;
 }
@@ -75,8 +75,8 @@ uint8_t write_register(uint8_t reg, uint8_t value)
 	uint8_t status = 0;
 	uint8_t addr = W_REGISTER | (REGISTER_MASK & reg);
 	csn(LOW);
-	HAL_SPI_TransmitReceive(&hspi1, &addr, &status, 1, 100);
-	HAL_SPI_Transmit(&hspi1, &value, 1, 1000);
+	HAL_SPI_TransmitReceive(&hspi2, &addr, &status, 1, 100);
+	HAL_SPI_Transmit(&hspi2, &value, 1, 1000);
 	csn(HIGH);
 	return status;
 }
@@ -91,13 +91,13 @@ uint8_t write_payload(const void* buf, uint8_t data_len, const uint8_t writeType
 	uint8_t blank_len = dynamic_payloads_enabled ? 0 : payload_size - data_len;
 
 	csn(LOW);
-	HAL_SPI_TransmitReceive(&hspi1, &addr, &status, 1, 100);
-	HAL_SPI_Transmit(&hspi1, (uint8_t*)current, data_len, 100);
+	HAL_SPI_TransmitReceive(&hspi2, &addr, &status, 1, 100);
+	HAL_SPI_Transmit(&hspi2, (uint8_t*)current, data_len, 100);
 
 	while(blank_len--)
 	{
 		uint8_t empt = 0;
-		HAL_SPI_Transmit(&hspi1, &empt, 1, 100);
+		HAL_SPI_Transmit(&hspi2, &empt, 1, 100);
 	}
 
 	csn(HIGH);
@@ -118,13 +118,13 @@ uint8_t read_payload(void* buf, uint8_t data_len)
 
 	uint8_t addr = R_RX_PAYLOAD;
 	csn(LOW);
-	HAL_SPI_Transmit(&hspi1, &addr, 1, 100);
-	HAL_SPI_Receive(&hspi1, (uint8_t*)current, data_len, 100);
+	HAL_SPI_Transmit(&hspi2, &addr, 1, 100);
+	HAL_SPI_Receive(&hspi2, (uint8_t*)current, data_len, 100);
 
 	while(blank_len--)
 	{
 		uint8_t empt = 0;
-		HAL_SPI_Receive(&hspi1, &empt, 1, 100);
+		HAL_SPI_Receive(&hspi2, &empt, 1, 100);
 	}
 
 	csn(HIGH);
@@ -145,7 +145,7 @@ uint8_t spiTrans(uint8_t cmd)
 {
 	uint8_t status = 0;
 	csn(LOW);
-	HAL_SPI_TransmitReceive(&hspi1, &cmd, &status, 1, 1000);
+	HAL_SPI_TransmitReceive(&hspi2, &cmd, &status, 1, 1000);
 	csn(HIGH);
 	return status;
 }
@@ -332,8 +332,8 @@ uint8_t getDynamicPayloadSize(void)
 	uint8_t result = 0, addr;
 	csn(LOW);
 	addr = R_RX_PL_WID;
-	HAL_SPI_TransmitReceive(&hspi1, &addr, &result, 1, 1000);
-	HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xff, &result, 1, 1000);
+	HAL_SPI_TransmitReceive(&hspi2, &addr, &result, 1, 1000);
+	HAL_SPI_TransmitReceive(&hspi2, (uint8_t*)0xff, &result, 1, 1000);
 	csn(HIGH);
 
 	if(result > 32)
@@ -439,8 +439,8 @@ void toggle_features(void)
 {
 	uint8_t addr = ACTIVATE;
 	csn(LOW);
-	HAL_SPI_Transmit(&hspi1, &addr, 1, 1000);
-	HAL_SPI_Transmit(&hspi1, (uint8_t*)0x73, 1, 1000);
+	HAL_SPI_Transmit(&hspi2, &addr, 1, 1000);
+	HAL_SPI_Transmit(&hspi2, (uint8_t*)0x73, 1, 1000);
 	csn(HIGH);
 }
 
@@ -476,8 +476,8 @@ void writeAckPayload(uint8_t pipe, const void* buf, uint8_t len)
 	uint8_t data_len = rf24_min(len, 32);
 	uint8_t addr = W_ACK_PAYLOAD | (pipe & 0x07);
 	csn(LOW);
-	HAL_SPI_Transmit(&hspi1, &addr, 1, 1000);
-	HAL_SPI_Transmit(&hspi1, (uint8_t*)current, data_len, 1000);
+	HAL_SPI_Transmit(&hspi2, &addr, 1, 1000);
+	HAL_SPI_Transmit(&hspi2, (uint8_t*)current, data_len, 1000);
 	csn(HIGH);
 }
 

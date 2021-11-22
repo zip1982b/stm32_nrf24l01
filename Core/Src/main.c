@@ -45,7 +45,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+ uint8_t res;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -56,7 +56,13 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t spiData[2];
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_Pin	== IRQ_Pin)
+	{
+		HAL_UART_Transmit(&huart2, (uint8_t*)"IRQ\n", strlen("IRQ\n"), 1000);
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -90,42 +96,104 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_GPIO_WritePin(GPIOC, CSN_Pin, GPIO_PIN_SET); //on
-  HAL_Delay(10);
+  //const uint64_t pipe0 = 0x787878787878;
+  const uint64_t pipe1 = 0xE8E8F0F0E2LL; // адрес первой трубы
+  //const uint64_t pipe2 = 0xE8E8F0F0A2LL;
+  //const uint64_t pipe3 = 0xE8E8F0F0D1LL;
+  //const uint64_t pipe4 = 0xE8E8F0F0C3LL;
+  //const uint64_t pipe5 = 0xE8E8F0F0E7LL;
   
-  //Read data
-  //1. Put CS low - activate
-  HAL_GPIO_WritePin(GPIOC, CSN_Pin, GPIO_PIN_RESET); //off
-  //2. Transmit register address
-  spiData[0] = 0x05;
-  HAL_SPI_Transmit(&hspi2, spiData, 1, 10);
-  //3. Read
-  HAL_SPI_Receive(&hspi2, &spiData[1], 1, 10);
-  //4. bring CS high - Deactivate
-  HAL_GPIO_WritePin(GPIOC, CSN_Pin, GPIO_PIN_SET);
-  
-  
-  //Write operation 0x05
-  //1. Put CS low - activate
-  HAL_GPIO_WritePin(GPIOC, CSN_Pin, GPIO_PIN_RESET); //off
-  //2. Transmit register address
-  spiData[0] = 0x05 | 0x20;
-  spiData[1] = 0x67;
-  HAL_SPI_Transmit(&hspi2, spiData, 2, 10);
-  //3. bring CS high - Deactivate
-  HAL_GPIO_WritePin(GPIOC, CSN_Pin, GPIO_PIN_SET);
-  
-  //Read data
-  //1. Put CS low - activate
-  HAL_GPIO_WritePin(GPIOC, CSN_Pin, GPIO_PIN_RESET); //off
-  //2. Transmit register address
-  spiData[0] = 0x05;
-  HAL_SPI_Transmit(&hspi2, spiData, 1, 10);
-  //3. Read
-  HAL_SPI_Receive(&hspi2, &spiData[1], 1, 10);
-  //4. bring CS high - Deactivate
-  HAL_GPIO_WritePin(GPIOC, CSN_Pin, GPIO_PIN_SET);
-  
+  res = isChipConnected(); // проверяет подключён ли модуль к SPI
+
+  char str[64] = {0,};
+  snprintf(str, 64, "Connected: %s\n", 1 ? "OK" : "NOT OK");
+  HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 1000);
+
+  res = NRF_Init(); // инициализация
+
+  snprintf(str, 64, "Init: %s\n", res > 0 && res < 255 ? "OK" : "NOT OK");
+  HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 1000);
+
+  ////////////// SET ////////////////
+  enableAckPayload();
+  //setAutoAck(false);
+  //setPayloadSize(3);
+  setChannel(19);
+  openReadingPipe(1, pipe1);
+  startListening();
+  ///////////////////////////////////
+
+  ////////////////////////// Вывод всяких статусов, для работы не нужно /////////////////////////////
+  uint8_t status = get_status();
+  snprintf(str, 64, "get_status: 0x%02x\n", status);
+  HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 1000);
+
+  status = getPALevel();
+  snprintf(str, 64, "getPALevel: 0x%02x  ", status);
+  HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 1000);
+
+  if(status == 0x00)
+  {
+	  HAL_UART_Transmit(&huart2, (uint8_t*)"RF24_PA_MIN\n", strlen("RF24_PA_MIN\n"), 1000);
+  }
+  else if(status == 0x01)
+  {
+	  HAL_UART_Transmit(&huart2, (uint8_t*)"RF24_PA_LOW\n", strlen("RF24_PA_LOW\n"), 1000);
+  }
+  else if(status == 0x02)
+  {
+	  HAL_UART_Transmit(&huart2, (uint8_t*)"RF24_PA_HIGH\n", strlen("RF24_PA_HIGH\n"), 1000);
+  }
+  else if(status == 0x03)
+  {
+	  HAL_UART_Transmit(&huart2, (uint8_t*)"RF24_PA_MAX\n", strlen("RF24_PA_MAX\n"), 1000);
+  }
+
+  status = getChannel();
+  snprintf(str, 64, "getChannel: 0x%02x № %d\n", status, status);
+  HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 1000);
+
+  status = getDataRate();
+  snprintf(str, 64, "getDataRate: 0x%02x  ", status);
+  HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 1000);
+
+  if(status == 0x02)
+  {
+	  HAL_UART_Transmit(&huart2, (uint8_t*)"RF24_250KBPS\n", strlen("RF24_250KBPS\n"), 1000);
+  }
+  else if(status == 0x01)
+  {
+	  HAL_UART_Transmit(&huart2, (uint8_t*)"RF24_2MBPS\n", strlen("RF24_2MBPS\n"), 1000);
+  }
+  else
+  {
+	  HAL_UART_Transmit(&huart2, (uint8_t*)"RF24_1MBPS\n", strlen("RF24_1MBPS\n"), 1000);
+  }
+
+  status = getPayloadSize();
+  snprintf(str, 64, "getPayloadSize: %d\n", status);
+  HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 1000);
+
+  status = getCRCLength();
+  snprintf(str, 64, "getCRCLength: 0x%02x  ", status);
+  HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 1000);
+
+  if(status == 0x00)
+  {
+	  HAL_UART_Transmit(&huart2, (uint8_t*)"RF24_CRC_DISABLED\n", strlen("RF24_CRC_DISABLED\n"), 1000);
+  }
+  else if(status == 0x01)
+  {
+	  HAL_UART_Transmit(&huart2, (uint8_t*)"RF24_CRC_8\n", strlen("RF24_CRC_8\n"), 1000);
+  }
+  else if(status == 0x02)
+  {
+	  HAL_UART_Transmit(&huart2, (uint8_t*)"RF24_CRC_16\n", strlen("RF24_CRC_16\n"), 1000);
+  }
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+  maskIRQ(true, true, true); // маскируем прерывания
   
   /* USER CODE END 2 */
 
@@ -133,6 +201,52 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  ///////////////////////////////////// ПРИЁМ /////////////////////////////////////////////
+	uint8_t nrf_data[32] = {0,}; // буфер указываем максимального размера
+	static uint8_t remsg = 0;
+	uint8_t pipe_num = 0;
+
+	if(available(&pipe_num)) // проверяем пришло ли что-то
+	{
+		remsg++;
+
+		writeAckPayload(pipe_num, &remsg, sizeof(remsg)); // отправляем полезную нагрузку вместе с подтверждением
+
+		if(pipe_num == 0) // проверяем в какую трубу пришли данные
+		{
+			HAL_UART_Transmit(&huart2, (uint8_t*)"pipe 0\n", strlen("pipe 0\n"), 1000);
+		}
+
+		else if(pipe_num == 1)
+		{
+			HAL_UART_Transmit(&huart2, (uint8_t*)"pipe 1\n", strlen("pipe 1\n"), 1000);
+
+			uint8_t count = getDynamicPayloadSize(); // смотрим сколько байт прилетело
+
+			read(&nrf_data, count); // Читаем данные в массив nrf_data и указываем сколько байт читать
+
+			if(nrf_data[0] == 77 && nrf_data[1] == 86 && nrf_data[2] == 97) // проверяем правильность данных
+			{
+				HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+				snprintf(str, 64, "data[0]=%d data[1]=%d data[2]=%d\n", nrf_data[0], nrf_data[1], nrf_data[2]);
+				HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 1000);
+			}
+		}
+
+		else if(pipe_num == 2)
+		{
+			HAL_UART_Transmit(&huart2, (uint8_t*)"pipe 2\n", strlen("pipe 2\n"), 1000);
+		}
+
+		else
+		{
+			while(availableMy()) // если данные придут от неуказанной трубы, то попадут сюда
+			{
+				read(&nrf_data, sizeof(nrf_data));
+				HAL_UART_Transmit(&huart2, (uint8_t*)"Unknown pipe\n", strlen("Unknown pipe\n"), 1000);
+			}
+		}
+	}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
