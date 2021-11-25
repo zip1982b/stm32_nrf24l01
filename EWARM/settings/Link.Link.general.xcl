@@ -2,7 +2,7 @@
 
 "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.4\arm\bin\armstlink2.dll" 
 
-"D:\workspace\stm32_nrf24L01\Link\EWARM\Link\Exe\Link.out" 
+"C:\Users\MrZang\IAR_prj\stm32_nrf24l01\EWARM\Link\Exe\Link.out" 
 
 --plugin="C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.4\arm\bin\armbat.dll" 
 

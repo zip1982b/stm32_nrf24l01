@@ -25,7 +25,7 @@ if not "%~1" == "" goto debugFile
 
 @echo on 
 
-"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.4\common\bin\cspybat" -f "D:\workspace\stm32_nrf24L01\Link\EWARM\settings\Link.Link.general.xcl" --backend -f "D:\workspace\stm32_nrf24L01\Link\EWARM\settings\Link.Link.driver.xcl" 
+"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.4\common\bin\cspybat" -f "C:\Users\MrZang\IAR_prj\stm32_nrf24l01\EWARM\settings\Link.Link.general.xcl" --backend -f "C:\Users\MrZang\IAR_prj\stm32_nrf24l01\EWARM\settings\Link.Link.driver.xcl" 
 
 @echo off 
 goto end 
@@ -34,7 +34,7 @@ goto end
 
 @echo on 
 
-"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.4\common\bin\cspybat" -f "D:\workspace\stm32_nrf24L01\Link\EWARM\settings\Link.Link.general.xcl" "--debug_file=%~1" --backend -f "D:\workspace\stm32_nrf24L01\Link\EWARM\settings\Link.Link.driver.xcl" 
+"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.4\common\bin\cspybat" -f "C:\Users\MrZang\IAR_prj\stm32_nrf24l01\EWARM\settings\Link.Link.general.xcl" "--debug_file=%~1" --backend -f "C:\Users\MrZang\IAR_prj\stm32_nrf24l01\EWARM\settings\Link.Link.driver.xcl" 
 
 @echo off 
 :end

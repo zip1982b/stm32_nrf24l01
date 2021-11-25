@@ -119,8 +119,14 @@ int main(void)
   //setAutoAck(false);
   //setPayloadSize(3);
   setChannel(19);
+  #if defined PTX
+  openWritingPipe(pipe1);
+  #endif
+  #if defined PRX
   openReadingPipe(1, pipe1);
   startListening();
+  #endif
+  
   ///////////////////////////////////
 
   ////////////////////////// Вывод всяких статусов, для работы не нужно /////////////////////////////
@@ -202,13 +208,17 @@ int main(void)
   while (1)
   {
 	  ///////////////////////////////////// ПРИЁМ /////////////////////////////////////////////
+	
+	
+	#if defined PRX
 	uint8_t nrf_data[32] = {0,}; // буфер указываем максимального размера
-	static uint8_t remsg = 0;
+	//static uint8_t remsg = 0;
+	char remsg[] = "Hello Zhan!";
 	uint8_t pipe_num = 0;
-
+	
 	if(available(&pipe_num)) // проверяем пришло ли что-то
 	{
-		remsg++;
+		//remsg++;
 
 		writeAckPayload(pipe_num, &remsg, sizeof(remsg)); // отправляем полезную нагрузку вместе с подтверждением
 
@@ -224,7 +234,7 @@ int main(void)
 			uint8_t count = getDynamicPayloadSize(); // смотрим сколько байт прилетело
 
 			read(&nrf_data, count); // Читаем данные в массив nrf_data и указываем сколько байт читать
-
+                        //writeAckPayload(pipe_num, &nrf_data[0], sizeof(&nrf_data[0])); // отправляем полезную нагрузку вместе с подтверждением
 			if(nrf_data[0] == 77 && nrf_data[1] == 86 && nrf_data[2] == 97) // проверяем правильность данных
 			{
 				HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
@@ -247,6 +257,32 @@ int main(void)
 			}
 		}
 	}
+	#endif
+	
+
+	#if defined PTX
+	uint8_t nrf_data[32] = {0,}; 
+	nrf_data[0] = 77;
+	nrf_data[1] = 86;
+	nrf_data[2] = 97;
+	//uint8_t remsg = 0; // переменная для приёма байта пришедшего вместе с ответом
+	char remsg[30] = {0,};
+	if(write(&nrf_data, strlen((const char*)nrf_data))) // отправляем данные
+	  {
+		if(isAckPayloadAvailable()) // проверяем пришло ли что-то вместе с ответом
+		{
+			read(&remsg, sizeof(remsg));
+			HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+			snprintf(str, 64, "Ack: %s\n", remsg);
+			HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 1000);
+		}
+	  }
+	else HAL_UART_Transmit(&huart2, (uint8_t*)"Not write\n", strlen("Not write\n"), 1000);
+
+	HAL_Delay(100);
+	#endif
+	
+	
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

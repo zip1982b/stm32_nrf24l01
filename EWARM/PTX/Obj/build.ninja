@@ -22,6 +22,7 @@ rule browsedata
 #Build steps
 build gpio.pbi : index gpio.xcl
 build main.pbi : index main.xcl
+build nrf24l01.pbi : index nrf24l01.xcl
 build spi.pbi : index spi.xcl
 build stm32f4xx_hal_msp.pbi : index stm32f4xx_hal_msp.xcl
 build stm32f4xx_it.pbi : index stm32f4xx_it.xcl
@@ -44,11 +45,11 @@ build stm32f4xx_hal_spi.pbi : index stm32f4xx_hal_spi.xcl
 build stm32f4xx_hal_tim.pbi : index stm32f4xx_hal_tim.xcl
 build stm32f4xx_hal_tim_ex.pbi : index stm32f4xx_hal_tim_ex.xcl
 build stm32f4xx_hal_uart.pbi : index stm32f4xx_hal_uart.xcl
-build Link_part0.pbi : link gpio.pbi main.pbi spi.pbi stm32f4xx_hal_msp.pbi stm32f4xx_it.pbi
-build Link_part1.pbi : link usart.pbi system_stm32f4xx.pbi stm32f4xx_hal.pbi stm32f4xx_hal_cortex.pbi stm32f4xx_hal_dma.pbi
-build Link_part2.pbi : link stm32f4xx_hal_dma_ex.pbi stm32f4xx_hal_exti.pbi stm32f4xx_hal_flash.pbi stm32f4xx_hal_flash_ex.pbi stm32f4xx_hal_flash_ramfunc.pbi
-build Link_part3.pbi : link stm32f4xx_hal_gpio.pbi stm32f4xx_hal_pwr.pbi stm32f4xx_hal_pwr_ex.pbi stm32f4xx_hal_rcc.pbi stm32f4xx_hal_rcc_ex.pbi
-build Link_part4.pbi : link stm32f4xx_hal_spi.pbi stm32f4xx_hal_tim.pbi stm32f4xx_hal_tim_ex.pbi stm32f4xx_hal_uart.pbi
+build Link_part0.pbi : link gpio.pbi main.pbi nrf24l01.pbi spi.pbi stm32f4xx_hal_msp.pbi
+build Link_part1.pbi : link stm32f4xx_it.pbi usart.pbi system_stm32f4xx.pbi stm32f4xx_hal.pbi stm32f4xx_hal_cortex.pbi
+build Link_part2.pbi : link stm32f4xx_hal_dma.pbi stm32f4xx_hal_dma_ex.pbi stm32f4xx_hal_exti.pbi stm32f4xx_hal_flash.pbi stm32f4xx_hal_flash_ex.pbi
+build Link_part3.pbi : link stm32f4xx_hal_flash_ramfunc.pbi stm32f4xx_hal_gpio.pbi stm32f4xx_hal_pwr.pbi stm32f4xx_hal_pwr_ex.pbi stm32f4xx_hal_rcc.pbi
+build Link_part4.pbi : link stm32f4xx_hal_rcc_ex.pbi stm32f4xx_hal_spi.pbi stm32f4xx_hal_tim.pbi stm32f4xx_hal_tim_ex.pbi stm32f4xx_hal_uart.pbi
 build Link.pbd : link Link_part0.pbi Link_part1.pbi Link_part2.pbi Link_part3.pbi Link_part4.pbi
 build Link.pbw : browsedata Link.pbd
 
